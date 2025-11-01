@@ -1,127 +1,133 @@
 "use client"
 
-import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { ArrowLeft } from "lucide-react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
-import { mockProjects } from "@/lib/mock-data"
-import { Switch } from "@/components/ui/switch"
-import { Label } from "@/components/ui/label"
-import type { ToolName } from "@/lib/types"
+import { ArrowLeft, Settings } from "lucide-react"
 
-const availableTools = [
-  {
-    name: "OWASP Top 10",
-    toolName: "owasp" as ToolName,
-    description: "Web application security risks",
-  },
-  {
-    name: "Trivy",
-    toolName: "trivy" as ToolName,
-    description: "Container and dependency scanning",
-  },
-  {
-    name: "Bandit",
-    toolName: "bandit" as ToolName,
-    description: "Python security linter",
-  },
-  {
-    name: "Dependency-Track",
-    toolName: "dependency_track" as ToolName,
-    description: "Component analysis platform",
-  },
-  {
-    name: "SonarQube",
-    toolName: "sonarqube" as ToolName,
-    description: "Code quality and security",
-  },
-  {
-    name: "Snyk",
-    toolName: "snyk" as ToolName,
-    description: "Developer security platform",
-  },
-]
+import type { Risk, RiskStatus, Project } from "@/lib/types"
+import { mockProjects, mockRisks } from "@/lib/mock-data"
+import { findProject } from "@/lib/project-store"       // <-- lee del localStorage
 
-export default function ProjectSettingsPage({ params }: { params: { id: string } }) {
+import { KanbanColumn } from "@/components/kanban/kanban-column"
+import { RiskDetailDialog } from "@/components/kanban/risk-detail-dialog"
+import { CreateRiskDialog } from "@/components/kanban/create-risk-dialog"
+import { ImportDialog } from "@/components/integrations/import-dialog"
+import { Button } from "@/components/ui/button"
+
+export default function ProjectPage({ params }: { params: { id: string } }) {
   const { id } = params
-  const project = mockProjects.find((p) => p.id === id)
 
-  const [enabledTools, setEnabledTools] = useState<Set<ToolName>>(new Set(["owasp", "trivy", "dependency_track"]))
+  const [project, setProject] = useState<Project | null>(null)
+  const [selectedRisk, setSelectedRisk] = useState<Risk | null>(null)
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [risks, setRisks] = useState<Risk[]>([])
+
+  // Cargar proyecto desde localStorage con fallback a mocks
+  useEffect(() => {
+    const p = findProject(id, mockProjects) ?? null
+    setProject(p)
+  }, [id])
+
+  // Cargar riesgos (si el proyecto es nuevo, no tendrá riesgos → [])
+  useEffect(() => {
+    setRisks(mockRisks.filter((r) => r.project_id === id))
+  }, [id])
 
   if (!project) {
     return (
       <div className="p-6">
         <p>Project not found</p>
+        <div className="mt-4">
+          <Button variant="ghost" asChild>
+            <Link href="/projects">
+              <ArrowLeft className="h-4 w-4 mr-2" /> Back to projects
+            </Link>
+          </Button>
+        </div>
       </div>
     )
   }
 
-  const toggleTool = (toolName: ToolName) => {
-    setEnabledTools((prev) => {
-      const newSet = new Set(prev)
-      if (newSet.has(toolName)) {
-        newSet.delete(toolName)
-      } else {
-        newSet.add(toolName)
-      }
-      return newSet
-    })
+  // Agrupar riesgos por estado
+  const risksByStatus = {
+    identified: risks.filter((r) => r.status === "identified"),
+    in_progress: risks.filter((r) => r.status === "in_progress"),
+    mitigated: risks.filter((r) => r.status === "mitigated"),
+    closed: risks.filter((r) => r.status === "closed"),
+  }
+
+  const handleRiskClick = (risk: Risk) => {
+    setSelectedRisk(risk)
+    setDialogOpen(true)
+  }
+
+  const handleDrop = (riskId: string, newStatus: RiskStatus) => {
+    setRisks((prev) => prev.map((r) => (r.id === riskId ? { ...r, status: newStatus } : r)))
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" asChild>
-          <Link href={`/projects/${id}`}>
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
-        </Button>
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Project Settings</h1>
-          <p className="text-muted-foreground mt-1">{project.name}</p>
+    <div className="flex flex-col h-full">
+      <div className="border-b bg-background px-6 py-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" asChild>
+              <Link href="/projects">
+                <ArrowLeft className="h-5 w-5" />
+              </Link>
+            </Button>
+            <div>
+              <h1 className="text-2xl font-bold">{project.name}</h1>
+              {project.description && (
+                <p className="text-sm text-muted-foreground mt-1">{project.description}</p>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <ImportDialog projectId={id} />
+            <CreateRiskDialog projectId={id} />
+            <Button variant="outline" size="icon" asChild>
+              <Link href={`/projects/${id}/settings`}>
+                <Settings className="h-5 w-5" />
+              </Link>
+            </Button>
+          </div>
         </div>
       </div>
 
-      <Card className="dark:gradient-card dark:border-primary/20">
-        <CardHeader>
-          <CardTitle>Security Tools Configuration</CardTitle>
-          <CardDescription>
-            Enable or disable security tools for this project. Only enabled tools will be available for importing
-            vulnerabilities.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {availableTools.map((tool) => (
-            <div
-              key={tool.toolName}
-              className="flex items-center justify-between p-4 rounded-lg border border-primary/20 bg-primary/5 hover:bg-primary/10 transition-colors"
-            >
-              <div className="space-y-0.5">
-                <Label htmlFor={tool.toolName} className="text-base font-medium cursor-pointer">
-                  {tool.name}
-                </Label>
-                <p className="text-sm text-muted-foreground">{tool.description}</p>
-              </div>
-              <Switch
-                id={tool.toolName}
-                checked={enabledTools.has(tool.toolName)}
-                onCheckedChange={() => toggleTool(tool.toolName)}
-              />
-            </div>
-          ))}
-        </CardContent>
-      </Card>
+      <div className="flex-1 overflow-x-auto p-6">
+        <div className="flex gap-6 h-full">
+          <KanbanColumn
+            title="Identified"
+            status="identified"
+            risks={risksByStatus.identified}
+            onRiskClick={handleRiskClick}
+            onDrop={handleDrop}
+          />
+          <KanbanColumn
+            title="In Progress"
+            status="in_progress"
+            risks={risksByStatus.in_progress}
+            onRiskClick={handleRiskClick}
+            onDrop={handleDrop}
+          />
+          <KanbanColumn
+            title="Mitigated"
+            status="mitigated"
+            risks={risksByStatus.mitigated}
+            onRiskClick={handleRiskClick}
+            onDrop={handleDrop}
+          />
+          <KanbanColumn
+            title="Closed"
+            status="closed"
+            risks={risksByStatus.closed}
+            onRiskClick={handleRiskClick}
+            onDrop={handleDrop}
+          />
+        </div>
+      </div>
 
-      <Card className="dark:gradient-card dark:border-primary/20">
-        <CardHeader>
-          <CardTitle>Project Information</CardTitle>
-          <CardDescription>Basic project details and configuration.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">Additional project settings coming soon...</p>
-        </CardContent>
-      </Card>
+      <RiskDetailDialog risk={selectedRisk} open={dialogOpen} onOpenChange={setDialogOpen} />
     </div>
   )
 }

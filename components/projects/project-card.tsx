@@ -1,64 +1,55 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { MoreVertical, AlertTriangle } from "lucide-react"
-import Link from "next/link"
-import type { Project } from "@/lib/types"
-import { cn } from "@/lib/utils"
+"use client"
 
-interface ProjectCardProps {
-  project: Project & {
-    riskCount?: number
-    criticalCount?: number
-  }
+import Link from "next/link"
+import { Trash2, MoreHorizontal } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import type { Project } from "@/lib/types"
+
+// ✅ Extiende props para aceptar onDelete (opcional)
+export type ProjectCardProps = {
+  project: Project & { riskCount?: number; criticalCount?: number }
+  onDelete?: () => void
 }
 
-export function ProjectCard({ project }: ProjectCardProps) {
+export function ProjectCard({ project, onDelete }: ProjectCardProps) {
   return (
-    <Card
-      className={cn(
-        "transition-all duration-300 hover:scale-[1.02]",
-        "dark:gradient-card dark:border-primary/20 hover:glow-border",
-      )}
-    >
-      <CardHeader className="flex flex-row items-start justify-between space-y-0">
-        <div className="space-y-1 flex-1">
-          <CardTitle className="text-lg">
-            <Link href={`/projects/${project.id}`} className="hover:text-primary transition-colors hover:glow-text">
-              {project.name}
-            </Link>
-          </CardTitle>
-          <CardDescription className="line-clamp-2">{project.description}</CardDescription>
+    <div className="rounded-lg border p-4 flex flex-col gap-3 relative">
+      {/* Título / link al proyecto */}
+      <Link href={`/projects/${project.id}/settings`} className="hover:underline">
+        <h3 className="font-semibold">{project.name}</h3>
+      </Link>
+
+      {/* Descripción (si hay) */}
+      {project.description ? (
+        <p className="text-sm text-muted-foreground line-clamp-2">{project.description}</p>
+      ) : null}
+
+      {/* Métricas */}
+      <div className="flex items-center justify-between text-xs text-muted-foreground">
+        <span>
+          Risks: {project.riskCount ?? 0} · Critical: {project.criticalCount ?? 0}
+        </span>
+        <span>{new Date(project.created_at).toLocaleDateString()}</span>
+      </div>
+
+      {/* Acciones (Eliminar opcional) */}
+      {onDelete ? (
+        <div className="mt-2 flex justify-end gap-2">
+          <Button
+            type="button"
+            variant="destructive"
+            size="sm"
+            onClick={onDelete}
+            className="gap-2"
+            aria-label="Delete project"
+          >
+            <Trash2 className="h-4 w-4" />
+            Eliminar
+          </Button>
         </div>
-        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10">
-          <MoreVertical className="h-4 w-4" />
-        </Button>
-      </CardHeader>
-      <CardContent>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4 text-sm">
-            <div className="flex items-center gap-1">
-              <span className="text-muted-foreground">Risks:</span>
-              <span className="font-medium">{project.riskCount || 0}</span>
-            </div>
-            {(project.criticalCount || 0) > 0 && (
-              <div
-                className={cn(
-                  "flex items-center gap-1 text-destructive",
-                  "px-2 py-1 rounded-md bg-red-500/10 border border-red-500/30",
-                  "shadow-[0_0_10px_rgba(239,68,68,0.2)]",
-                )}
-              >
-                <AlertTriangle className="h-4 w-4" />
-                <span className="font-medium">{project.criticalCount}</span>
-              </div>
-            )}
-          </div>
-          <Badge variant="secondary" className="text-xs border border-primary/30 bg-primary/10">
-            Active
-          </Badge>
-        </div>
-      </CardContent>
-    </Card>
+      ) : null}
+    </div>
   )
 }
+
+export default ProjectCard

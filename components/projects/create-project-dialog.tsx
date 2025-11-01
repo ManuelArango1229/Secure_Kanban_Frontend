@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import {
@@ -18,7 +17,11 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Plus } from "lucide-react"
 
-export function CreateProjectDialog() {
+type CreateProjectDialogProps = {
+  onCreate?: (data: { name: string; description?: string }) => void
+}
+
+export function CreateProjectDialog({ onCreate }: CreateProjectDialogProps) {
   const [open, setOpen] = useState(false)
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
@@ -26,11 +29,12 @@ export function CreateProjectDialog() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!name.trim()) return
     setLoading(true)
 
-    // Mock project creation
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    console.log("[v0] Creating project:", { name, description })
+    // Simulación de creación (frontend only)
+    await new Promise((r) => setTimeout(r, 300))
+    onCreate?.({ name, description })
 
     setName("")
     setDescription("")
@@ -43,18 +47,19 @@ export function CreateProjectDialog() {
       <DialogTrigger asChild>
         <Button>
           <Plus className="h-4 w-4 mr-2" />
-          New Project
+          New project
         </Button>
       </DialogTrigger>
       <DialogContent>
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Create New Project</DialogTitle>
-            <DialogDescription>Add a new project to track security risks and vulnerabilities.</DialogDescription>
+            <DialogTitle>Create new project</DialogTitle>
+            <DialogDescription>Start tracking risks and vulnerabilities for a system.</DialogDescription>
           </DialogHeader>
+
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Project Name</Label>
+              <Label htmlFor="name">Project name</Label>
               <Input
                 id="name"
                 placeholder="E-Commerce Platform"
@@ -64,11 +69,12 @@ export function CreateProjectDialog() {
                 disabled={loading}
               />
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
               <Textarea
                 id="description"
-                placeholder="Security assessment for our main application..."
+                placeholder="Security assessment for the main app…"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 disabled={loading}
@@ -76,12 +82,13 @@ export function CreateProjectDialog() {
               />
             </div>
           </div>
+
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={loading}>
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? "Creating..." : "Create Project"}
+            <Button type="submit" disabled={loading || !name.trim()}>
+              {loading ? "Creating…" : "Create project"}
             </Button>
           </DialogFooter>
         </form>
