@@ -80,7 +80,7 @@ export default function DashboardPage() {
             <div className="text-2xl font-bold">{totalRisks}</div>
             <div className="flex items-center gap-1 text-xs mt-1">
               <TrendingDown className="h-3 w-3 text-green-600" />
-              <span className="text-green-600 font-medium">{Math.abs(riskTrend)}%</span>
+              <span className="text-black-600 font-medium">{Math.abs(riskTrend)}%</span>
               <span className="text-muted-foreground">from last month</span>
             </div>
           </CardContent>
@@ -116,7 +116,7 @@ export default function DashboardPage() {
             <div className="text-2xl font-bold text-green-600">{mitigationRate}%</div>
             <div className="flex items-center gap-1 text-xs mt-1">
               <TrendingUp className="h-3 w-3 text-green-600" />
-              <span className="text-green-600 font-medium">8%</span>
+              <span className="text-black-600 font-medium">8%</span>
               <span className="text-muted-foreground">from last month</span>
             </div>
           </CardContent>

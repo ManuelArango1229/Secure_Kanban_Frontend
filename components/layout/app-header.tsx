@@ -24,7 +24,7 @@ export function AppHeader() {
         </div>
       </div>
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" className="hover:bg-primary/10">
+        <Button variant="ghost" size="icon" className="hover:bg-primary/10" aria-label="Notifications">
           <Bell className="h-5 w-5" />
         </Button>
         <Avatar className="ring-2 ring-primary/30">
