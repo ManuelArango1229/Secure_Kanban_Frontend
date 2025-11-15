@@ -27,6 +27,7 @@ const statusLabels = {
   in_progress: "In Progress",
   mitigated: "Mitigated",
   accepted: "Accepted",
+  closed: "Closed",
 }
 
 export function RiskDetailDialog({ risk, open, onOpenChange }: RiskDetailDialogProps) {

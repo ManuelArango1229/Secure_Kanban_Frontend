@@ -1,6 +1,5 @@
 "use client"
 
-import type React from "react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import {
@@ -16,6 +15,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Plus } from "lucide-react"
+import { supabase } from "@/lib/supabase/client"  // Importar el cliente de Supabase
 
 type CreateProjectDialogProps = {
   onCreate?: (data: { name: string; description?: string }) => void
@@ -32,13 +32,25 @@ export function CreateProjectDialog({ onCreate }: CreateProjectDialogProps) {
     if (!name.trim()) return
     setLoading(true)
 
-    // Simulación de creación (frontend only)
-    await new Promise((r) => setTimeout(r, 300))
-    onCreate?.({ name, description })
+    // Crear el nuevo proyecto en Supabase
+    const { data, error } = await supabase
+      .from("projects") // Nombre de la tabla de proyectos en Supabase
+      .insert([{ name, description, owner_id: "1" }]) // Ajusta `owner_id` según sea necesario
 
-    setName("")
-    setDescription("")
-    setOpen(false)
+    if (error) {
+      console.error("Error creating project:", error)
+    } else {
+      console.log("Project created:", data)
+
+      // Llamar al callback onCreate para pasar los datos al componente superior
+      onCreate?.({ name, description })
+
+      // Resetear el formulario
+      setName("")
+      setDescription("")
+      setOpen(false)
+    }
+
     setLoading(false)
   }
 

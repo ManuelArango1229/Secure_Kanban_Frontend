@@ -1,7 +1,5 @@
 "use client"
 
-import type React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import {
@@ -18,13 +16,14 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Plus } from "lucide-react"
-import type { RiskSeverity } from "@/lib/types"
+import type { RiskSeverity, Risk } from "@/lib/types"
 
 interface CreateRiskDialogProps {
   projectId: string
+  onRiskCreated: (newRisk: Risk) => void // Callback para pasar el nuevo riesgo a la página principal
 }
 
-export function CreateRiskDialog({ projectId }: CreateRiskDialogProps) {
+export function CreateRiskDialog({ projectId, onRiskCreated }: CreateRiskDialogProps) {
   const [open, setOpen] = useState(false)
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
@@ -38,11 +37,40 @@ export function CreateRiskDialog({ projectId }: CreateRiskDialogProps) {
     e.preventDefault()
     setLoading(true)
 
-    // Mock risk creation
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    console.log("[v0] Creating risk:", { title, description, severity, cweId, component, cvssScore })
+    // Crear un nuevo riesgo según la interfaz de Risk
+    const newRisk: Risk = {
+      id: Date.now().toString(),  // Generar un ID único
+      project_id: projectId,
+      title,
+      description,
+      severity,
+      status: "identified",  // Asignamos el estado "Identified"
+      cvss_score: parseFloat(cvssScore) || undefined,  // Convertir a número
+      cwe_id: cweId || undefined,
+      affected_component: component || undefined,
+      mitigation_plan: "",  // Puedes agregar un plan de mitigación si lo deseas
+      assigned_to: "",  // Dejar vacío o agregar lógica
+      source_tool: "custom",  // Por ejemplo, podrías usar una herramienta personalizada
+      position: 0, // Puedes asignar la posición si lo necesitas
+      created_by: "admin",  // Establecer quién crea el riesgo, puede ser dinámico
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }
 
-    // Reset form
+    // Obtener los riesgos actuales desde el localStorage para este proyecto
+    const storedRisks = localStorage.getItem(`risks-${projectId}`)
+    const risks = storedRisks ? JSON.parse(storedRisks) : []
+
+    // Agregar el nuevo riesgo al arreglo de riesgos
+    risks.push(newRisk)
+
+    // Guardar el nuevo arreglo de riesgos en el localStorage con la clave del proyecto
+    localStorage.setItem(`risks-${projectId}`, JSON.stringify(risks))
+
+    // Llamar al callback para agregar el riesgo a la vista principal
+    onRiskCreated(newRisk)
+
+    // Resetear el formulario
     setTitle("")
     setDescription("")
     setSeverity("medium")

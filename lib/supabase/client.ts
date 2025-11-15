@@ -1,14 +1,6 @@
-// Supabase client for client-side operations
-// This will be used once Supabase integration is added
+// lib/supabase/client.ts
+import { createClient } from '@supabase/supabase-js';
 
-import { createBrowserClient } from "@supabase/ssr"
-
-let client: ReturnType<typeof createBrowserClient> | null = null
-
-export function getSupabaseClient() {
-  if (client) return client
-
-  client = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
-
-  return client
-}
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string;
+export const supabase = createClient(supabaseUrl, supabaseKey);
