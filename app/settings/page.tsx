@@ -1,11 +1,17 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { ToolCard } from "@/components/integrations/tool-card"
-import { ConnectToolDialog } from "@/components/integrations/connect-tool-dialog"
-import type { ToolName } from "@/lib/types"
+import { useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { ToolCard } from "@/components/integrations/tool-card";
+import { ConnectToolDialog } from "@/components/integrations/connect-tool-dialog";
+import type { ToolName } from "@/lib/types";
 
 const tools = [
   {
@@ -19,41 +25,49 @@ const tools = [
     description: "Import dependency vulnerabilities from Snyk",
   },
   {
-    name: "OWASP ZAP",
+    name: "OWASP DEPENDENCY TRACK",
     toolName: "owasp_zap" as ToolName,
-    description: "Import web application security findings from OWASP ZAP",
+    description:
+      "Import web application security findings from OWASP DEPENDENCY TRACK",
   },
   {
     name: "Burp Suite",
     toolName: "burp_suite" as ToolName,
     description: "Import penetration testing results from Burp Suite",
   },
-]
+];
 
 export default function SettingsPage() {
-  const [connectedTools, setConnectedTools] = useState<Set<ToolName>>(new Set())
-  const [dialogOpen, setDialogOpen] = useState(false)
-  const [selectedTool, setSelectedTool] = useState<{ name: string; toolName: ToolName } | null>(null)
+  const [connectedTools, setConnectedTools] = useState<Set<ToolName>>(
+    new Set(),
+  );
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedTool, setSelectedTool] = useState<{
+    name: string;
+    toolName: ToolName;
+  } | null>(null);
 
   const handleConnect = (toolName: ToolName, displayName: string) => {
-    setSelectedTool({ name: displayName, toolName })
-    setDialogOpen(true)
-  }
+    setSelectedTool({ name: displayName, toolName });
+    setDialogOpen(true);
+  };
 
   const handleDialogClose = (open: boolean) => {
-    setDialogOpen(open)
+    setDialogOpen(open);
     if (!open && selectedTool) {
       // Mock: mark tool as connected
-      setConnectedTools((prev) => new Set(prev).add(selectedTool.toolName))
-      setSelectedTool(null)
+      setConnectedTools((prev) => new Set(prev).add(selectedTool.toolName));
+      setSelectedTool(null);
     }
-  }
+  };
 
   return (
     <div className="p-6 space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-        <p className="text-muted-foreground mt-1">Manage your account and integrations</p>
+        <p className="text-muted-foreground mt-1">
+          Manage your account and integrations
+        </p>
       </div>
 
       <Tabs defaultValue="integrations" className="space-y-6">
@@ -68,7 +82,8 @@ export default function SettingsPage() {
             <CardHeader>
               <CardTitle>DevSecOps Tools</CardTitle>
               <CardDescription>
-                Connect your security tools to automatically import vulnerabilities and findings.
+                Connect your security tools to automatically import
+                vulnerabilities and findings.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -92,10 +107,14 @@ export default function SettingsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Profile Settings</CardTitle>
-              <CardDescription>Manage your personal information and preferences.</CardDescription>
+              <CardDescription>
+                Manage your personal information and preferences.
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">Profile settings coming soon...</p>
+              <p className="text-sm text-muted-foreground">
+                Profile settings coming soon...
+              </p>
             </CardContent>
           </Card>
         </TabsContent>
@@ -104,10 +123,14 @@ export default function SettingsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Team Management</CardTitle>
-              <CardDescription>Invite team members and manage permissions.</CardDescription>
+              <CardDescription>
+                Invite team members and manage permissions.
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">Team management coming soon...</p>
+              <p className="text-sm text-muted-foreground">
+                Team management coming soon...
+              </p>
             </CardContent>
           </Card>
         </TabsContent>
@@ -122,5 +145,5 @@ export default function SettingsPage() {
         />
       )}
     </div>
-  )
+  );
 }
