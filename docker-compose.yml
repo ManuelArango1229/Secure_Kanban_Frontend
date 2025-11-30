@@ -1,0 +1,58 @@
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: keycloak123
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - dtrack-network
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    depends_on:
+      - postgres
+    ports:
+      - "8081:8080"
+    environment:
+      - KC_BOOTSTRAP_ADMIN_USERNAME=admin
+      - KC_BOOTSTRAP_ADMIN_PASSWORD=admin
+    command: ["start-dev"]
+    networks:
+      - dtrack-network
+  dtrack-apiserver:
+    image: dependencytrack/apiserver:latest
+    ports:
+      - "8090:8080"
+    environment:
+      - ALPINE_CORS_ENABLED=true
+      - ALPINE_CORS_ALLOW_ORIGIN=*
+      - ALPINE_CORS_ALLOW_METHODS=GET,POST,PUT,DELETE,OPTIONS
+      - ALPINE_CORS_ALLOW_HEADERS=Origin,Content-Type,Authorization,X-Requested-With,Content-Length,Accept,X-Api-Key,X-Total-Count
+      - ALPINE_CORS_EXPOSE_HEADERS=Origin,Content-Type,Authorization,X-Requested-With,Content-Length,Accept,X-Api-Key,X-Total-Count
+      - ALPINE_CORS_ALLOW_CREDENTIALS=true
+      - ALPINE_CORS_MAX_AGE=3600
+    volumes:
+      - dtrack-data:/data
+    networks:
+      - dtrack-network
+  dtrack-frontend:
+    image: dependencytrack/frontend:latest
+    depends_on:
+      dtrack-apiserver:
+        condition: service_healthy
+    ports:
+      - "8082:8080"
+    environment:
+      - API_BASE_URL=http://localhost:8090
+    networks:
+      - dtrack-network
+
+volumes:
+  postgres_data:
+  dtrack-data:
+
+networks:
+  dtrack-network:
+    driver: bridge
