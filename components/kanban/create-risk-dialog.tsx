@@ -37,48 +37,41 @@ export function CreateRiskDialog({ projectId, onRiskCreated }: CreateRiskDialogP
     e.preventDefault()
     setLoading(true)
 
-    // Crear un nuevo riesgo según la interfaz de Risk
-    const newRisk: Risk = {
-      id: Date.now().toString(),  // Generar un ID único
-      project_id: projectId,
-      title,
-      description,
-      severity,
-      status: "identified",  // Asignamos el estado "Identified"
-      cvss_score: parseFloat(cvssScore) || undefined,  // Convertir a número
-      cwe_id: cweId || undefined,
-      affected_component: component || undefined,
-      mitigation_plan: "",  // Puedes agregar un plan de mitigación si lo deseas
-      assigned_to: "",  // Dejar vacío o agregar lógica
-      source_tool: "custom",  // Por ejemplo, podrías usar una herramienta personalizada
-      position: 0, // Puedes asignar la posición si lo necesitas
-      created_by: "admin",  // Establecer quién crea el riesgo, puede ser dinámico
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+    try {
+      const res = await fetch("/api/risks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          project_id: projectId,
+          title,
+          description,
+          severity,
+          status: "identified",
+          cvss_score: cvssScore ? parseFloat(cvssScore) : null,
+          cwe_id: cweId || null,
+          affected_component: component || null,
+        }),
+      })
+
+      if (!res.ok) throw new Error("Error creating risk")
+      const newRisk = await res.json()
+
+      onRiskCreated(newRisk as Risk)
+
+      // Resetear el formulario
+      setTitle("")
+      setDescription("")
+      setSeverity("medium")
+      setCweId("")
+      setComponent("")
+      setCvssScore("")
+      setOpen(false)
+    } catch (err) {
+      console.error("Error creando riesgo:", err)
+      // Aquí puedes mostrar un toast o mensaje de error al usuario
+    } finally {
+      setLoading(false)
     }
-
-    // Obtener los riesgos actuales desde el localStorage para este proyecto
-    const storedRisks = localStorage.getItem(`risks-${projectId}`)
-    const risks = storedRisks ? JSON.parse(storedRisks) : []
-
-    // Agregar el nuevo riesgo al arreglo de riesgos
-    risks.push(newRisk)
-
-    // Guardar el nuevo arreglo de riesgos en el localStorage con la clave del proyecto
-    localStorage.setItem(`risks-${projectId}`, JSON.stringify(risks))
-
-    // Llamar al callback para agregar el riesgo a la vista principal
-    onRiskCreated(newRisk)
-
-    // Resetear el formulario
-    setTitle("")
-    setDescription("")
-    setSeverity("medium")
-    setCweId("")
-    setComponent("")
-    setCvssScore("")
-    setOpen(false)
-    setLoading(false)
   }
 
   return (

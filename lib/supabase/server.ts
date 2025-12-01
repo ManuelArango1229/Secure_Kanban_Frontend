@@ -7,7 +7,16 @@ import { cookies } from "next/headers"
 export async function getSupabaseServer() {
   const cookieStore = await cookies()
 
-  return createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+  // Prefer service role key on the server (allows reading/writing regardless of RLS).
+  // Fallback to NEXT_PUBLIC_SUPABASE_ANON_KEY if service role not provided.
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+  if (!url || !key) {
+    throw new Error("Supabase URL or key is not defined. Set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY or NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local")
+  }
+
+  return createServerClient(url, key, {
     cookies: {
       getAll() {
         return cookieStore.getAll()

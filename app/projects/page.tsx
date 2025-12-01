@@ -2,10 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react"
 import type { Project } from "@/lib/types"
-import { mockProjects, mockRisks } from "@/lib/mock-data"
+import { mockRisks } from "@/lib/mock-data"
 import { ProjectCard } from "@/components/projects/project-card"
 import { CreateProjectDialog } from "@/components/projects/create-project-dialog"
-import { getProjects, addProject, setProjects, removeProject } from "@/lib/project-store"
+// project-store/localStorage not used: projects come only from the DB
 
 type CreateData = { name: string; description?: string }
 
@@ -13,15 +13,26 @@ export default function ProjectsPage() {
   const [projects, setProjectsState] = useState<Project[]>([])
 
   // Carga inicial desde localStorage, con fallback a mocks
-  useEffect(() => {
-    setProjectsState(getProjects(mockProjects))
-  }, [])
+    useEffect(() => {
+      // Cargar proyectos desde API (fallback a mocks si falla)
+      let mounted = true
+      ;(async () => {
+        try {
+          const res = await fetch("/api/projects")
+          if (!res.ok) throw new Error("Error fetching projects")
+          const data = await res.json()
+          if (mounted) setProjectsState(data || [])
+        } catch (err) {
+          // En caso de error, mostrar vacío (no usar mocks)
+          console.error("Error fetching projects:", err)
+          if (mounted) setProjectsState([])
+        }
+      })()
 
-  // Mantén localStorage en sync cuando cambie la lista
-  useEffect(() => {
-    // si prefieres que al quedar vacío no vuelvan los mocks, deja igual la carga inicial
-    setProjects(projects)
-  }, [projects])
+      return () => {
+        mounted = false
+      }
+    }, [])
 
   const projectsWithStats = useMemo(
     () =>
@@ -36,7 +47,7 @@ export default function ProjectsPage() {
     [projects]
   )
 
-  const handleCreate = (data: CreateData) => {
+  const handleCreate = async (data: CreateData) => {
     const now = new Date().toISOString()
     const newProject: Project = {
       id: crypto.randomUUID(),
@@ -46,23 +57,28 @@ export default function ProjectsPage() {
       created_at: now,
       updated_at: now,
     }
-    // Actualiza estado y persiste
-    setProjectsState(prev => {
-      const next = [newProject, ...prev]
-      setProjects(next)
-      return next
-    })
-    // Por si navegas antes de que React sincronice
-    addProject(newProject)
+    try {
+      const res = await fetch("/api/projects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: data.name, description: data.description }),
+      })
+      if (!res.ok) throw new Error("Error creating project")
+      const created = await res.json()
+      setProjectsState(prev => [created, ...prev])
+    } catch (err) {
+      console.error("Create project error:", err)
+    }
   }
 
-  const handleDelete = (id: string) => {
-    setProjectsState(prev => {
-      const next = prev.filter(p => p.id !== id)
-      setProjects(next)      // persiste lista sin el proyecto
-      return next
-    })
-    removeProject(id)         // refuerzo en localStorage
+  const handleDelete = async (id: string) => {
+    try {
+      const res = await fetch(`/api/projects/${id}`, { method: "DELETE" })
+      if (!res.ok && res.status !== 204) throw new Error("Error deleting project")
+      setProjectsState(prev => prev.filter(p => p.id !== id))
+    } catch (err) {
+      console.error("Delete project error:", err)
+    }
   }
 
   return (

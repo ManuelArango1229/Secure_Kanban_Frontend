@@ -5,9 +5,6 @@ import Link from "next/link"
 import { ArrowLeft, Settings } from "lucide-react"
 
 import type { Risk, RiskStatus, Project } from "@/lib/types"
-import { mockProjects, mockRisks } from "@/lib/mock-data"
-import { findProject } from "@/lib/project-store"       // <-- lee del localStorage
-
 import { KanbanColumn } from "@/components/kanban/kanban-column"
 import { RiskDetailDialog } from "@/components/kanban/risk-detail-dialog"
 import { CreateRiskDialog } from "@/components/kanban/create-risk-dialog"
@@ -22,15 +19,52 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [risks, setRisks] = useState<Risk[]>([])
 
-  // Cargar proyecto desde localStorage con fallback a mocks
+  // Cargar proyecto desde API
   useEffect(() => {
-    const p = findProject(id, mockProjects) ?? null
-    setProject(p)
+    let mounted = true
+    ;(async () => {
+      try {
+        const res = await fetch(`/api/projects`)
+        if (!res.ok) throw new Error("Error fetching projects")
+        const projects = await res.json()
+        const found = projects.find((p: Project) => p.id === id) || null
+        if (mounted) setProject(found)
+      } catch (err) {
+        console.error("Error fetching project:", err)
+        if (mounted) setProject(null)
+      }
+    })()
+    return () => {
+      mounted = false
+    }
   }, [id])
 
-  // Cargar riesgos (si el proyecto es nuevo, no tendrá riesgos → [])
+  // Cargar riesgos desde API
   useEffect(() => {
-    setRisks(mockRisks.filter((r) => r.project_id === id))
+    let mounted = true
+
+    const fetchRisks = async () => {
+      try {
+        const res = await fetch(`/api/risks?project_id=${id}`)
+        if (!res.ok) throw new Error("Error fetching risks")
+        const data = await res.json()
+        if (mounted) setRisks(data || [])
+      } catch (err) {
+        console.error("Error fetching risks:", err)
+        if (mounted) setRisks([])
+      }
+    }
+
+    // Cargar inicialmente
+    fetchRisks()
+
+    // Polling cada 5 segundos para sincronizar cambios
+    const interval = setInterval(fetchRisks, 5000)
+
+    return () => {
+      mounted = false
+      clearInterval(interval)
+    }
   }, [id])
 
   if (!project) {
@@ -61,8 +95,40 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
     setDialogOpen(true)
   }
 
-  const handleDrop = (riskId: string, newStatus: RiskStatus) => {
+  const handleRiskCreated = (newRisk: Risk) => {
+    setRisks((prev) => [newRisk, ...prev])
+  }
+
+  const handleRiskDeleted = async (riskId: string) => {
+    console.log("handleRiskDeleted called with id:", riskId)
+    try {
+      const res = await fetch(`/api/risks/${riskId}`, { method: "DELETE" })
+      console.log("Delete response status:", res.status)
+      if (!res.ok && res.status !== 204) throw new Error("Error deleting risk")
+      setRisks((prev) => prev.filter(r => r.id !== riskId))
+    } catch (err) {
+      console.error("Delete risk error:", err)
+      throw err
+    }
+  }
+
+  const handleDrop = async (riskId: string, newStatus: RiskStatus) => {
+    // Actualizar localmente primero (optimistic update)
     setRisks((prev) => prev.map((r) => (r.id === riskId ? { ...r, status: newStatus } : r)))
+
+    // Luego actualizar en la BD
+    try {
+      const res = await fetch(`/api/risks/${riskId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      })
+      if (!res.ok) throw new Error("Error updating risk")
+    } catch (err) {
+      console.error("Error updating risk status:", err)
+      // Revertir el cambio si falla
+      setRisks((prev) => prev.map((r) => (r.id === riskId ? { ...r, status: risks.find(rk => rk.id === riskId)?.status || "identified" } : r)))
+    }
   }
 
   return (
@@ -84,7 +150,7 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
           </div>
           <div className="flex items-center gap-2">
             <ImportDialog projectId={id} />
-            <CreateRiskDialog projectId={id} />
+            <CreateRiskDialog projectId={id} onRiskCreated={handleRiskCreated} />
             <Button variant="outline" size="icon" asChild>
               <Link href={`/projects/${id}/settings`}>
                 <Settings className="h-5 w-5" />
@@ -127,7 +193,7 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
         </div>
       </div>
 
-      <RiskDetailDialog risk={selectedRisk} open={dialogOpen} onOpenChange={setDialogOpen} />
+      <RiskDetailDialog risk={selectedRisk} open={dialogOpen} onOpenChange={setDialogOpen} onDelete={handleRiskDeleted} />
     </div>
   )
 }

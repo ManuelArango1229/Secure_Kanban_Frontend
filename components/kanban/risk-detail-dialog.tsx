@@ -5,14 +5,16 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { AlertTriangle, Calendar, User, FileText, Shield } from "lucide-react"
+import { AlertTriangle, Calendar, User, FileText, Shield, Trash2 } from "lucide-react"
 import type { Risk } from "@/lib/types"
 import { cn } from "@/lib/utils"
+import { useState } from "react"
 
 interface RiskDetailDialogProps {
   risk: Risk | null
   open: boolean
   onOpenChange: (open: boolean) => void
+  onDelete?: (riskId: string) => Promise<void>
 }
 
 const severityConfig = {
@@ -26,13 +28,35 @@ const statusLabels = {
   identified: "Identified",
   in_progress: "In Progress",
   mitigated: "Mitigated",
-  accepted: "Accepted",
+  closed: "Closed",
 }
 
-export function RiskDetailDialog({ risk, open, onOpenChange }: RiskDetailDialogProps) {
+export function RiskDetailDialog({ risk, open, onOpenChange, onDelete }: RiskDetailDialogProps) {
+  const [isDeleting, setIsDeleting] = useState(false)
+
   if (!risk) return null
 
   const severity = severityConfig[risk.severity]
+
+  console.log("RiskDetailDialog - onDelete prop:", onDelete ? "exists" : "missing")
+
+  const handleDelete = async () => {
+    console.log("handleDelete called, onDelete:", onDelete)
+    if (!onDelete) {
+      console.warn("No onDelete callback provided")
+      return
+    }
+    setIsDeleting(true)
+    try {
+      console.log("Calling onDelete with risk id:", risk.id)
+      await onDelete(risk.id)
+      console.log("Delete successful")
+      onOpenChange(false)
+    } catch (err) {
+      console.error("Error deleting risk:", err)
+      setIsDeleting(false)
+    }
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -131,6 +155,18 @@ export function RiskDetailDialog({ risk, open, onOpenChange }: RiskDetailDialogP
             </Button>
             <Button variant="outline" className="flex-1 bg-transparent">
               Add Comment
+            </Button>
+            <Button
+              variant="destructive"
+              className="cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation()
+                handleDelete()
+              }}
+              disabled={isDeleting}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              {isDeleting ? "Deleting..." : "Delete"}
             </Button>
           </div>
         </div>

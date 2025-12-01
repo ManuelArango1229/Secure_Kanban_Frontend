@@ -1,14 +1,26 @@
-// Supabase client for client-side operations
-// This will be used once Supabase integration is added
+// Cliente Supabase para operaciones desde el cliente (navegador)
+// Recomendado: usar las variables públicas NEXT_PUBLIC_SUPABASE_URL y
+// NEXT_PUBLIC_SUPABASE_ANON_KEY en .env.local (no exponer keys privadas).
 
-import { createBrowserClient } from "@supabase/ssr"
+import { createClient, SupabaseClient } from "@supabase/supabase-js"
 
-let client: ReturnType<typeof createBrowserClient> | null = null
+const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-export function getSupabaseClient() {
-  if (client) return client
-
-  client = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
-
-  return client
+if (!url || !anonKey) {
+  throw new Error(
+    "Faltan variables de entorno: NEXT_PUBLIC_SUPABASE_URL o NEXT_PUBLIC_SUPABASE_ANON_KEY"
+  )
 }
+
+let supabase: SupabaseClient | null = null
+
+export function getSupabaseClient(): SupabaseClient {
+  if (supabase) return supabase
+
+  supabase = createClient(url!, anonKey!)
+  return supabase
+}
+
+// Export por defecto para imports directos
+export default getSupabaseClient()

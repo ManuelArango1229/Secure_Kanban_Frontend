@@ -36,18 +36,20 @@ export interface Risk {
   id: string
   project_id: string
   title: string
-  description?: string
+  description?: string | null
   severity: RiskSeverity
   status: RiskStatus
-  cvss_score?: number
-  cwe_id?: string
-  affected_component?: string
-  mitigation_plan?: string
-  assigned_to?: string
-  source_tool?: ToolName
-  position: number
-  created_by: string
+  cvss_score?: number | null
+  cwe_id?: string | null
+  affected_component?: string | null
+  mitigation_plan?: string | null
+  assigned_to?: string | null
+  source_tool?: ToolName | null
+  position?: number
+  created_by?: string | null
   created_at: string
+  updated_at: string
+}
   updated_at: string
 }
 

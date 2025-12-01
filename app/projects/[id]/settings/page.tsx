@@ -50,6 +50,24 @@ export default function ProjectPage() {
     setDialogOpen(true)
   }
 
+  const handleRiskDeleted = async (riskId: string) => {
+    try {
+      const res = await fetch(`/api/risks/${riskId}`, { method: "DELETE" })
+      if (!res.ok && res.status !== 204) throw new Error("Error deleting risk")
+
+      // Actualizar estado local y localStorage
+      setRisks((prev) => {
+        const updated = prev.filter((r) => r.id !== riskId)
+        if (id) localStorage.setItem(`risks-${id}`, JSON.stringify(updated))
+        return updated
+      })
+      setDialogOpen(false)
+    } catch (err) {
+      console.error("Delete risk error:", err)
+      throw err
+    }
+  }
+
   return (
     <div className="flex flex-col h-full">
       <div className="border-b bg-background px-6 py-4">
@@ -107,7 +125,7 @@ export default function ProjectPage() {
         </div>
       </div>
 
-      <RiskDetailDialog risk={selectedRisk} open={dialogOpen} onOpenChange={setDialogOpen} />
+      <RiskDetailDialog risk={selectedRisk} open={dialogOpen} onOpenChange={setDialogOpen} onDelete={handleRiskDeleted} />
     </div>
   )
 }
