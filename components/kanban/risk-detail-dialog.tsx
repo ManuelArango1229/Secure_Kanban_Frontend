@@ -9,12 +9,14 @@ import { AlertTriangle, Calendar, User, FileText, Shield, Trash2 } from "lucide-
 import type { Risk } from "@/lib/types"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
+import { EditRiskDialog } from "./edit-risk-dialog"
 
 interface RiskDetailDialogProps {
   risk: Risk | null
   open: boolean
   onOpenChange: (open: boolean) => void
   onDelete?: (riskId: string) => Promise<void>
+  onUpdate?: (riskId: string, updatedData: Partial<Risk>) => Promise<void>
 }
 
 const severityConfig = {
@@ -31,8 +33,9 @@ const statusLabels = {
   closed: "Closed",
 }
 
-export function RiskDetailDialog({ risk, open, onOpenChange, onDelete }: RiskDetailDialogProps) {
+export function RiskDetailDialog({ risk, open, onOpenChange, onDelete, onUpdate }: RiskDetailDialogProps) {
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
 
   if (!risk) return null
 
@@ -56,6 +59,12 @@ export function RiskDetailDialog({ risk, open, onOpenChange, onDelete }: RiskDet
       console.error("Error deleting risk:", err)
       setIsDeleting(false)
     }
+  }
+
+  const handleEditSave = async (updatedData: Partial<Risk>) => {
+    if (!onUpdate) return
+    await onUpdate(risk.id, updatedData)
+    setIsEditDialogOpen(false)
   }
 
   return (
@@ -150,7 +159,11 @@ export function RiskDetailDialog({ risk, open, onOpenChange, onDelete }: RiskDet
           <Separator />
 
           <div className="flex gap-2">
-            <Button variant="outline" className="flex-1 bg-transparent">
+            <Button 
+              variant="outline" 
+              className="flex-1 bg-transparent"
+              onClick={() => setIsEditDialogOpen(true)}
+            >
               Edit Risk
             </Button>
             <Button variant="outline" className="flex-1 bg-transparent">
@@ -170,6 +183,13 @@ export function RiskDetailDialog({ risk, open, onOpenChange, onDelete }: RiskDet
             </Button>
           </div>
         </div>
+
+        <EditRiskDialog
+          risk={risk}
+          open={isEditDialogOpen}
+          onOpenChange={setIsEditDialogOpen}
+          onSave={handleEditSave}
+        />
       </DialogContent>
     </Dialog>
   )

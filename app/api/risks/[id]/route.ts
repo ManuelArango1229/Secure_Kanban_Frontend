@@ -26,17 +26,29 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     const body = await req.json()
     const supabase = await getSupabaseServer()
 
-    const { error } = await supabase
+    const { error: updateError } = await supabase
       .from("risks")
       .update(body)
       .eq("id", id)
 
-    if (error) {
-      console.error("PATCH error from Supabase:", error)
-      return new Response(JSON.stringify({ error: error.message }), { status: 500 })
+    if (updateError) {
+      console.error("PATCH error from Supabase:", updateError)
+      return new Response(JSON.stringify({ error: updateError.message }), { status: 500 })
     }
 
-    return new Response(JSON.stringify({ success: true }), { status: 200 })
+    // Obtener el risk actualizado para devolverlo
+    const { data, error: fetchError } = await supabase
+      .from("risks")
+      .select("*")
+      .eq("id", id)
+      .single()
+
+    if (fetchError) {
+      console.error("Error fetching updated risk:", fetchError)
+      return new Response(JSON.stringify({ error: fetchError.message }), { status: 500 })
+    }
+
+    return new Response(JSON.stringify(data), { status: 200 })
   } catch (err: any) {
     console.error("PATCH /api/risks/[id] error:", err)
     return new Response(JSON.stringify({ error: err.message || String(err) }), { status: 500 })

@@ -7,42 +7,67 @@ import { Button } from "@/components/ui/button"
 import { KanbanColumn } from "@/components/kanban/kanban-column"
 import { RiskDetailDialog } from "@/components/kanban/risk-detail-dialog"
 import { CreateRiskDialog } from "@/components/kanban/create-risk-dialog"
-import { mockProjects } from "@/lib/mock-data"
-import { findProject } from "@/lib/project-store"
 import { useParams } from "next/navigation"
 import type { Risk, Project } from "@/lib/types"
 
 export default function ProjectPage() {
-  const { id } = useParams()
+  const params = useParams()
+  const id = typeof params.id === "string" ? params.id : ""
 
   const [project, setProject] = useState<Project | null>(null)
   const [selectedRisk, setSelectedRisk] = useState<Risk | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [risks, setRisks] = useState<Risk[]>([])
 
-  // Cargar proyecto desde localStorage con fallback a mocks
+  // Cargar proyecto desde API
   useEffect(() => {
-    if (id) {
-      const p = findProject(id, mockProjects) ?? null
-      setProject(p)
+    if (!id) return
+    let mounted = true
+    ;(async () => {
+      try {
+        const res = await fetch(`/api/projects`)
+        if (!res.ok) throw new Error("Error fetching projects")
+        const projects = await res.json()
+        const found = projects.find((p: Project) => p.id === id) || null
+        if (mounted) setProject(found)
+      } catch (err) {
+        console.error("Error fetching project:", err)
+        if (mounted) setProject(null)
+      }
+    })()
+    return () => {
+      mounted = false
     }
   }, [id])
 
-  // Cargar riesgos desde localStorage
+  // Cargar riesgos desde API
   useEffect(() => {
-    const storedRisks = localStorage.getItem(`risks-${id}`)
-    if (storedRisks) {
-      setRisks(JSON.parse(storedRisks))
+    if (!id) return
+    let mounted = true
+
+    const fetchRisks = async () => {
+      try {
+        const res = await fetch(`/api/risks?project_id=${id}`)
+        if (!res.ok) throw new Error("Error fetching risks")
+        const data = await res.json()
+        if (mounted) setRisks(data || [])
+      } catch (err) {
+        console.error("Error fetching risks:", err)
+        if (mounted) setRisks([])
+      }
+    }
+
+    fetchRisks()
+    const interval = setInterval(fetchRisks, 5000)
+
+    return () => {
+      mounted = false
+      clearInterval(interval)
     }
   }, [id])
 
   const handleRiskCreated = (newRisk: Risk) => {
-    // Agregar el nuevo riesgo al estado y al localStorage
-    setRisks((prev) => [...prev, newRisk])
-    const storedRisks = localStorage.getItem(`risks-${id}`)
-    const risks = storedRisks ? JSON.parse(storedRisks) : []
-    risks.push(newRisk)
-    localStorage.setItem(`risks-${id}`, JSON.stringify(risks))
+    setRisks((prev) => [newRisk, ...prev])
   }
 
   const handleRiskClick = (risk: Risk) => {
@@ -55,15 +80,27 @@ export default function ProjectPage() {
       const res = await fetch(`/api/risks/${riskId}`, { method: "DELETE" })
       if (!res.ok && res.status !== 204) throw new Error("Error deleting risk")
 
-      // Actualizar estado local y localStorage
-      setRisks((prev) => {
-        const updated = prev.filter((r) => r.id !== riskId)
-        if (id) localStorage.setItem(`risks-${id}`, JSON.stringify(updated))
-        return updated
-      })
+      // Actualizar estado local
+      setRisks((prev) => prev.filter((r) => r.id !== riskId))
       setDialogOpen(false)
     } catch (err) {
       console.error("Delete risk error:", err)
+      throw err
+    }
+  }
+
+  const handleRiskUpdated = async (riskId: string, updatedData: Partial<Risk>) => {
+    try {
+      const res = await fetch(`/api/risks/${riskId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedData),
+      })
+      if (!res.ok) throw new Error("Error updating risk")
+      const updated = await res.json()
+      setRisks((prev) => prev.map((r) => (r.id === riskId ? updated : r)))
+    } catch (err) {
+      console.error("Update risk error:", err)
       throw err
     }
   }
@@ -125,7 +162,7 @@ export default function ProjectPage() {
         </div>
       </div>
 
-      <RiskDetailDialog risk={selectedRisk} open={dialogOpen} onOpenChange={setDialogOpen} onDelete={handleRiskDeleted} />
+      <RiskDetailDialog risk={selectedRisk} open={dialogOpen} onOpenChange={setDialogOpen} onDelete={handleRiskDeleted} onUpdate={handleRiskUpdated} />
     </div>
   )
 }

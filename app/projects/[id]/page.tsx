@@ -112,6 +112,23 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
     }
   }
 
+  const handleRiskUpdated = async (riskId: string, updatedData: Partial<Risk>) => {
+    console.log("handleRiskUpdated called with id:", riskId, "data:", updatedData)
+    try {
+      const res = await fetch(`/api/risks/${riskId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedData),
+      })
+      if (!res.ok) throw new Error("Error updating risk")
+      const updated = await res.json()
+      setRisks((prev) => prev.map((r) => (r.id === riskId ? updated : r)))
+    } catch (err) {
+      console.error("Update risk error:", err)
+      throw err
+    }
+  }
+
   const handleDrop = async (riskId: string, newStatus: RiskStatus) => {
     // Actualizar localmente primero (optimistic update)
     setRisks((prev) => prev.map((r) => (r.id === riskId ? { ...r, status: newStatus } : r)))
@@ -193,7 +210,7 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
         </div>
       </div>
 
-      <RiskDetailDialog risk={selectedRisk} open={dialogOpen} onOpenChange={setDialogOpen} onDelete={handleRiskDeleted} />
+      <RiskDetailDialog risk={selectedRisk} open={dialogOpen} onOpenChange={setDialogOpen} onDelete={handleRiskDeleted} onUpdate={handleRiskUpdated} />
     </div>
   )
 }

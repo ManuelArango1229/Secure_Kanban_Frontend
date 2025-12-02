@@ -1,50 +1,67 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import type { Project } from "@/lib/types"
-import { mockRisks } from "@/lib/mock-data"
+import type { Project, Risk } from "@/lib/types"
 import { ProjectCard } from "@/components/projects/project-card"
 import { CreateProjectDialog } from "@/components/projects/create-project-dialog"
-// project-store/localStorage not used: projects come only from the DB
 
 type CreateData = { name: string; description?: string }
 
 export default function ProjectsPage() {
   const [projects, setProjectsState] = useState<Project[]>([])
+  const [risks, setRisks] = useState<Risk[]>([])
 
-  // Carga inicial desde localStorage, con fallback a mocks
-    useEffect(() => {
-      // Cargar proyectos desde API (fallback a mocks si falla)
-      let mounted = true
-      ;(async () => {
-        try {
-          const res = await fetch("/api/projects")
-          if (!res.ok) throw new Error("Error fetching projects")
-          const data = await res.json()
-          if (mounted) setProjectsState(data || [])
-        } catch (err) {
-          // En caso de error, mostrar vacío (no usar mocks)
-          console.error("Error fetching projects:", err)
-          if (mounted) setProjectsState([])
-        }
-      })()
-
-      return () => {
-        mounted = false
+  // Cargar proyectos desde API
+  useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      try {
+        const res = await fetch("/api/projects")
+        if (!res.ok) throw new Error("Error fetching projects")
+        const data = await res.json()
+        if (mounted) setProjectsState(data || [])
+      } catch (err) {
+        console.error("Error fetching projects:", err)
+        if (mounted) setProjectsState([])
       }
-    }, [])
+    })()
+
+    return () => {
+      mounted = false
+    }
+  }, [])
+
+  // Cargar todos los risks desde API
+  useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      try {
+        const res = await fetch("/api/risks")
+        if (!res.ok) throw new Error("Error fetching risks")
+        const data = await res.json()
+        if (mounted) setRisks(data || [])
+      } catch (err) {
+        console.error("Error fetching risks:", err)
+        if (mounted) setRisks([])
+      }
+    })()
+
+    return () => {
+      mounted = false
+    }
+  }, [])
 
   const projectsWithStats = useMemo(
     () =>
       projects.map((project) => {
-        const prs = mockRisks.filter((r) => r.project_id === project.id)
+        const prs = risks.filter((r) => r.project_id === project.id)
         return {
           ...project,
           riskCount: prs.length,
           criticalCount: prs.filter((r) => r.severity === "critical").length,
         }
       }),
-    [projects]
+    [projects, risks]
   )
 
   const handleCreate = async (data: CreateData) => {
