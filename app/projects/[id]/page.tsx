@@ -67,29 +67,7 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
     }
   }, [id])
 
-  if (!project) {
-    return (
-      <div className="p-6">
-        <p>Project not found</p>
-        <div className="mt-4">
-          <Button variant="ghost" asChild>
-            <Link href="/projects">
-              <ArrowLeft className="h-4 w-4 mr-2" /> Back to projects
-            </Link>
-          </Button>
-        </div>
-      </div>
-    )
-  }
-
-  // Agrupar riesgos por estado
-  const risksByStatus = {
-    identified: risks.filter((r) => r.status === "identified"),
-    in_progress: risks.filter((r) => r.status === "in_progress"),
-    mitigated: risks.filter((r) => r.status === "mitigated"),
-    closed: risks.filter((r) => r.status === "closed"),
-  }
-
+  // Handlers (definidos antes del early return)
   const handleRiskClick = (risk: Risk) => {
     setSelectedRisk(risk)
     setDialogOpen(true)
@@ -130,22 +108,59 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
   }
 
   const handleDrop = async (riskId: string, newStatus: RiskStatus) => {
-    // Actualizar localmente primero (optimistic update)
+    console.log("📍 PAGE handleDrop NUEVA VERSION:", riskId, "->", newStatus)
+    const previousRisk = risks.find(r => r.id === riskId)
+    if (!previousRisk) {
+      console.log("❌ Risk not found:", riskId)
+      return
+    }
+    
+    const previousStatus = previousRisk.status
+
+    // Actualizar localmente primero
     setRisks((prev) => prev.map((r) => (r.id === riskId ? { ...r, status: newStatus } : r)))
 
-    // Luego actualizar en la BD
     try {
+      console.log("🔵 Sending PATCH to /api/risks/" + riskId)
       const res = await fetch(`/api/risks/${riskId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
       })
+      console.log("🔵 PATCH response status:", res.status)
       if (!res.ok) throw new Error("Error updating risk")
+      const updated = await res.json()
+      console.log("✅ Risk updated:", updated)
+      setRisks((prev) => prev.map((r) => (r.id === riskId ? updated : r)))
     } catch (err) {
-      console.error("Error updating risk status:", err)
-      // Revertir el cambio si falla
-      setRisks((prev) => prev.map((r) => (r.id === riskId ? { ...r, status: risks.find(rk => rk.id === riskId)?.status || "identified" } : r)))
+      console.error("❌ Error updating risk status:", err)
+      setRisks((prev) => prev.map((r) => (r.id === riskId ? { ...r, status: previousStatus } : r)))
     }
+  }
+
+  console.log("🔵 COMPONENT RENDERED - handleDrop defined:", typeof handleDrop)
+
+  if (!project) {
+    return (
+      <div className="p-6">
+        <p>Project not found</p>
+        <div className="mt-4">
+          <Button variant="ghost" asChild>
+            <Link href="/projects">
+              <ArrowLeft className="h-4 w-4 mr-2" /> Back to projects
+            </Link>
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  // Agrupar riesgos por estado
+  const risksByStatus = {
+    identified: risks.filter((r) => r.status === "identified"),
+    in_progress: risks.filter((r) => r.status === "in_progress"),
+    mitigated: risks.filter((r) => r.status === "mitigated"),
+    closed: risks.filter((r) => r.status === "closed"),
   }
 
   return (

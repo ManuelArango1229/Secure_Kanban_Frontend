@@ -1,9 +1,9 @@
 import type { NextRequest } from "next/server"
 import { getSupabaseServer } from "@/lib/supabase/server"
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params
+    const { id } = await params
     if (!id) return new Response(JSON.stringify({ error: "Missing id" }), { status: 400 })
 
     const supabase = await getSupabaseServer()
@@ -18,9 +18,9 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   }
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params
+    const { id } = await params
     if (!id) return new Response(JSON.stringify({ error: "Missing id" }), { status: 400 })
 
     const body = await req.json()

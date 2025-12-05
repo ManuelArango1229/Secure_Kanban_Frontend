@@ -25,27 +25,51 @@ const statusColors = {
 
 export function KanbanColumn({ title, status, risks, onRiskClick, onDrop }: KanbanColumnProps) {
   const [isDragOver, setIsDragOver] = useState(false)
+  const [dragStartPos, setDragStartPos] = useState<{ x: number; y: number } | null>(null)
+
+  const handleDragStart = (e: React.DragEvent, riskId: string) => {
+    console.log("🟢 DRAG START:", riskId)
+    setDragStartPos({ x: e.clientX, y: e.clientY })
+    e.dataTransfer.setData("text/plain", riskId)
+    e.dataTransfer.effectAllowed = "move"
+  }
+
+  const handleClick = (risk: Risk, e: React.MouseEvent) => {
+    // Solo abrir el diálogo si no hubo drag (posición cambió muy poco)
+    if (dragStartPos) {
+      const dx = Math.abs(e.clientX - dragStartPos.x)
+      const dy = Math.abs(e.clientY - dragStartPos.y)
+      if (dx < 5 && dy < 5) {
+        onRiskClick(risk)
+      }
+      setDragStartPos(null)
+    } else {
+      onRiskClick(risk)
+    }
+  }
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
+    e.dataTransfer.dropEffect = "move"
     setIsDragOver(true)
   }
 
-  const handleDragLeave = () => {
-    setIsDragOver(false)
+  const handleDragLeave = (e: React.DragEvent) => {
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    const x = e.clientX
+    const y = e.clientY
+    if (x < rect.left || x >= rect.right || y < rect.top || y >= rect.bottom) {
+      setIsDragOver(false)
+    }
   }
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
     setIsDragOver(false)
-    const riskId = e.dataTransfer.getData("riskId")
+    const riskId = e.dataTransfer.getData("text/plain")
     if (riskId && onDrop) {
       onDrop(riskId, status)
     }
-  }
-
-  const handleDragStart = (e: React.DragEvent, riskId: string) => {
-    e.dataTransfer.setData("riskId", riskId)
   }
 
   return (
@@ -68,10 +92,16 @@ export function KanbanColumn({ title, status, risks, onRiskClick, onDrop }: Kanb
           </Badge>
         </div>
       </div>
-      <div className="flex-1 space-y-3 overflow-y-auto pr-1">
+      <div className="flex-1 space-y-3 overflow-y-auto pr-1 min-h-[200px]">
         {risks.map((risk) => (
-          <div key={risk.id} draggable onDragStart={(e) => handleDragStart(e, risk.id)}>
-            <RiskCard risk={risk} onClick={() => onRiskClick(risk)} />
+          <div
+            key={risk.id}
+            draggable="true"
+            onDragStart={(e) => handleDragStart(e, risk.id)}
+            onDragOver={(e) => e.stopPropagation()}
+            onClick={(e) => handleClick(risk, e)}
+          >
+            <RiskCard risk={risk} />
           </div>
         ))}
         {risks.length === 0 && (

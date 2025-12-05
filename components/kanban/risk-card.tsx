@@ -56,7 +56,7 @@ export function RiskCard({ risk, onClick }: RiskCardProps) {
   return (
     <Card
       className={cn(
-        "cursor-pointer transition-all duration-300 slide-in",
+        "cursor-move transition-all duration-300 slide-in",
         "hover:glow-border hover:scale-[1.02]",
         "dark:gradient-card dark:border-primary/20",
       )}

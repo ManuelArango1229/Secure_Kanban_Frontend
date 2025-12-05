@@ -105,6 +105,37 @@ export default function ProjectPage() {
     }
   }
 
+  const handleDrop = async (riskId: string, newStatus: "identified" | "in_progress" | "mitigated" | "closed") => {
+    console.log("📍 SETTINGS PAGE handleDrop:", riskId, "->", newStatus)
+    const previousRisk = risks.find(r => r.id === riskId)
+    if (!previousRisk) {
+      console.log("❌ Risk not found:", riskId)
+      return
+    }
+    
+    const previousStatus = previousRisk.status
+
+    // Actualizar localmente primero
+    setRisks((prev) => prev.map((r) => (r.id === riskId ? { ...r, status: newStatus } : r)))
+
+    try {
+      console.log("🔵 Sending PATCH to /api/risks/" + riskId)
+      const res = await fetch(`/api/risks/${riskId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      })
+      console.log("🔵 PATCH response status:", res.status)
+      if (!res.ok) throw new Error("Error updating risk")
+      const updated = await res.json()
+      console.log("✅ Risk updated:", updated)
+      setRisks((prev) => prev.map((r) => (r.id === riskId ? updated : r)))
+    } catch (err) {
+      console.error("❌ Error updating risk status:", err)
+      setRisks((prev) => prev.map((r) => (r.id === riskId ? { ...r, status: previousStatus } : r)))
+    }
+  }
+
   return (
     <div className="flex flex-col h-full">
       <div className="border-b bg-background px-6 py-4">
@@ -140,24 +171,28 @@ export default function ProjectPage() {
             status="identified"
             risks={risks.filter((r) => r.status === "identified")}
             onRiskClick={handleRiskClick}
+            onDrop={handleDrop}
           />
           <KanbanColumn
             title="In Progress"
             status="in_progress"
             risks={risks.filter((r) => r.status === "in_progress")}
             onRiskClick={handleRiskClick}
+            onDrop={handleDrop}
           />
           <KanbanColumn
             title="Mitigated"
             status="mitigated"
             risks={risks.filter((r) => r.status === "mitigated")}
             onRiskClick={handleRiskClick}
+            onDrop={handleDrop}
           />
           <KanbanColumn
             title="Closed"
             status="closed"
             risks={risks.filter((r) => r.status === "closed")}
             onRiskClick={handleRiskClick}
+            onDrop={handleDrop}
           />
         </div>
       </div>
