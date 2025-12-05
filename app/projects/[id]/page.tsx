@@ -132,6 +132,31 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
       const updated = await res.json()
       console.log("✅ Risk updated:", updated)
       setRisks((prev) => prev.map((r) => (r.id === riskId ? updated : r)))
+
+      // Registrar cambio de estado como comentario del sistema
+      console.log("💬 Adding system comment for status change")
+      const statusLabels: Record<RiskStatus, string> = {
+        identified: "Identificado",
+        in_progress: "En Progreso",
+        mitigated: "Mitigado",
+        closed: "Cerrado",
+      }
+      const statusChangeMessage = `Estado cambió de **${statusLabels[previousStatus]}** a **${statusLabels[newStatus]}**`
+      try {
+        const commentRes = await fetch(`/api/risks/${riskId}/comments`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            comment: statusChangeMessage,
+            user_id: "system",
+          }),
+        })
+        if (commentRes.ok) {
+          console.log("✅ System comment created")
+        }
+      } catch (err) {
+        console.error("❌ Error creating system comment:", err)
+      }
     } catch (err) {
       console.error("❌ Error updating risk status:", err)
       setRisks((prev) => prev.map((r) => (r.id === riskId ? { ...r, status: previousStatus } : r)))
@@ -168,9 +193,10 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
       <div className="border-b bg-background px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" asChild>
-              <Link href="/projects">
-                <ArrowLeft className="h-5 w-5" />
+            <Button variant="outline" size="sm" asChild className="hover:bg-accent">
+              <Link href="/projects" className="flex items-center gap-2">
+                <ArrowLeft className="h-4 w-4" />
+                <span>Volver a Proyectos</span>
               </Link>
             </Button>
             <div>

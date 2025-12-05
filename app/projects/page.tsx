@@ -1,9 +1,12 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import Link from "next/link"
+import { ArrowLeft } from "lucide-react"
 import type { Project, Risk } from "@/lib/types"
 import { ProjectCard } from "@/components/projects/project-card"
 import { CreateProjectDialog } from "@/components/projects/create-project-dialog"
+import { Button } from "@/components/ui/button"
 
 type CreateData = { name: string; description?: string }
 
@@ -100,6 +103,15 @@ export default function ProjectsPage() {
 
   return (
     <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between mb-4">
+        <Button variant="outline" size="sm" asChild className="hover:bg-accent">
+          <Link href="/dashboard" className="flex items-center gap-2">
+            <ArrowLeft className="h-4 w-4" />
+            <span>Volver al Dashboard</span>
+          </Link>
+        </Button>
+      </div>
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Projects</h1>

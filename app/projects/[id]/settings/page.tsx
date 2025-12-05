@@ -130,6 +130,31 @@ export default function ProjectPage() {
       const updated = await res.json()
       console.log("✅ Risk updated:", updated)
       setRisks((prev) => prev.map((r) => (r.id === riskId ? updated : r)))
+
+      // Registrar cambio de estado como comentario del sistema
+      console.log("💬 Adding system comment for status change")
+      const statusLabels: Record<"identified" | "in_progress" | "mitigated" | "closed", string> = {
+        identified: "Identificado",
+        in_progress: "En Progreso",
+        mitigated: "Mitigado",
+        closed: "Cerrado",
+      }
+      const statusChangeMessage = `Estado cambió de **${statusLabels[previousStatus]}** a **${statusLabels[newStatus]}**`
+      try {
+        const commentRes = await fetch(`/api/risks/${riskId}/comments`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            comment: statusChangeMessage,
+            user_id: "system",
+          }),
+        })
+        if (commentRes.ok) {
+          console.log("✅ System comment created")
+        }
+      } catch (err) {
+        console.error("❌ Error creating system comment:", err)
+      }
     } catch (err) {
       console.error("❌ Error updating risk status:", err)
       setRisks((prev) => prev.map((r) => (r.id === riskId ? { ...r, status: previousStatus } : r)))

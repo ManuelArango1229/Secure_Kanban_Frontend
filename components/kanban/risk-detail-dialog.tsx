@@ -10,6 +10,7 @@ import type { Risk } from "@/lib/types"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
 import { EditRiskDialog } from "./edit-risk-dialog"
+import { RiskComments } from "./risk-comments"
 
 interface RiskDetailDialogProps {
   risk: Risk | null
@@ -166,9 +167,6 @@ export function RiskDetailDialog({ risk, open, onOpenChange, onDelete, onUpdate 
             >
               Edit Risk
             </Button>
-            <Button variant="outline" className="flex-1 bg-transparent">
-              Add Comment
-            </Button>
             <Button
               variant="destructive"
               className="cursor-pointer"
@@ -182,6 +180,10 @@ export function RiskDetailDialog({ risk, open, onOpenChange, onDelete, onUpdate 
               {isDeleting ? "Deleting..." : "Delete"}
             </Button>
           </div>
+
+          <Separator />
+
+          <RiskComments riskId={risk.id} />
         </div>
 
         <EditRiskDialog
