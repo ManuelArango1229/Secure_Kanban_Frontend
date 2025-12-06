@@ -12,6 +12,9 @@ import {
 import { ToolCard } from "@/components/integrations/tool-card";
 import { ConnectToolDialog } from "@/components/integrations/connect-tool-dialog";
 import type { ToolName } from "@/lib/types";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const tools = [
   {
@@ -63,11 +66,19 @@ export default function SettingsPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-        <p className="text-muted-foreground mt-1">
-          Manage your account and integrations
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
+          <p className="text-muted-foreground mt-1">
+            Manage your account and integrations
+          </p>
+        </div>
+        <Button asChild variant="secondary" className="gap-2">
+          <Link href="/dashboard">
+            <ArrowLeft className="h-4 w-4" />
+            Volver al Dashboard
+          </Link>
+        </Button>
       </div>
 
       <Tabs defaultValue="integrations" className="space-y-6">

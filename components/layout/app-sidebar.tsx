@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Projects", href: "/projects", icon: FolderKanban },
+  { name: "Settings", href: "/settings", icon: Settings },
 ]
 
 export function AppSidebar() {
