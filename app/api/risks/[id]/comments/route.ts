@@ -33,7 +33,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     if (!id) return new Response(JSON.stringify({ error: "Missing id" }), { status: 400 })
 
     const body = await req.json()
-    const { comment, user_id } = body
+
+    const { comment } = body
 
     if (!comment) {
       return new Response(JSON.stringify({ error: "Missing comment" }), { status: 400 })
@@ -44,7 +45,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       .from("risk_comments")
       .insert({
         risk_id: id,
-        user_id: user_id || "anonymous",
         comment,
       })
       .select()
