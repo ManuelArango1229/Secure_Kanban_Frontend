@@ -180,11 +180,6 @@ export default function ProjectPage() {
           </div>
           <div className="flex items-center gap-2">
             <CreateRiskDialog projectId={id} onRiskCreated={handleRiskCreated} />
-            <Button variant="outline" size="icon" asChild>
-              <Link href={`/projects/${id}/settings`}>
-                <Settings className="h-5 w-5" />
-              </Link>
-            </Button>
           </div>
         </div>
       </div>
