@@ -1,70 +1,207 @@
 # 🛡️ SecureKanban Frontend
 
-
-
-Este repositorio contiene el **frontend** de la aplicación, desarrollado en **React + TypeScript**, con un enfoque en **seguridad, escalabilidad y facilidad de integración** con el backend (FastAPI).
-
----
+Frontend oficial de SecureKanban, desarrollado con React + TypeScript, orientado a buenas prácticas de seguridad, escalabilidad y DevSecOps.
+Integra autenticación segura con Keycloak, consume el backend en FastAPI, y se despliega en Vercel.
 
 ## 🚀 Objetivo del Proyecto
 
-SecureKanban busca ofrecer a equipos pequeños una herramienta que les permita:
+SecureKanban permite a equipos pequeños:
 
-- Gestionar proyectos de manera ágil (tablero Kanban).
-- Registrar y dar seguimiento a **riesgos y vulnerabilidades**.
-- **Importar reportes** de herramientas open source como Dependency-Track, Trivy o Bandit.
-- Visualizar métricas y alertas de seguridad en un **dashboard interactivo**.
+Gestionar proyectos con un tablero Kanban moderno.
 
----
+Registrar y hacer seguimiento de riesgos, vulnerabilidades y controles.
 
-## 🧩 Tecnologías Principales
+Importar reportes desde herramientas open source (Dependency-Track, Trivy, Bandit).
 
-| Área          | Tecnología                              | Descripción                                             |
-| ------------- | --------------------------------------- | ------------------------------------------------------- |
-| Lenguaje      | **TypeScript**                          | Tipado estático, más seguridad en tiempo de compilación |
-| Validación    | **Zod**                                 | Validación tipada de formularios                        |
-| DevSecOps     | **npm audit**, **Snyk**, **Dependabot** | Control continuo de dependencias inseguras              |
+Visualizar métricas y alertas de seguridad en un dashboard interactivo en tiempo real.
 
-├── Components (UI)
-├── Pages (Login, Projects, Backlog, Kanban, Dashboard)
-├── Hooks (auth, api, state)
-├── Services (HTTP client, OIDC)
-└── Config (env, security headers)
+Integrarse con pipelines de DevSecOps para análisis, validación y despliegue continuo.
 
+## 🌐 Despliegue
 
-> API REST segura (JWT / OpenID Connect) con el backend de **FastAPI**, autenticado vía **Keycloak**.
----
+Frontend (Vercel):
+https://secure-kanban-frontend.vercel.app/dashboard
 
+Backend (FastAPI – Railway):
+https://secure-kanban-backend-production.up.railway.app (ejemplo, ajusta si usas otro dominio)
 
-### 1️⃣ Requisitos previos
+Autenticación:
+Keycloak (OpenID Connect / JWT)
 
-### 2️⃣ Clonar el repositorio
-```bash
-git clone https://github.com/ManuelArango1229/Secure_Kanban.git
-cd securekanban-frontend
+⚠️ El enlace del frontend abre sesión como un usuario ya autenticado. Esto facilita la visualización, ya que el flujo real incluye 2FA.
+
+🧩 Tecnologías Principales
+Área	Tecnología	Descripción
+Lenguaje	TypeScript	Seguridad en tiempo de compilación
+UI/UX	React + Zustand	Componentes modulares y estado global simplificado
+Validación	Zod	Validación tipada de formularios
+Autenticación	Keycloak (OIDC / JWT)	SSO y flujos seguros
+DevSecOps	npm audit, Snyk, Dependabot	Auditoría continua de seguridad
+CI/CD	GitHub Actions	Pipelines automáticos
+``` 
+📁 Estructura del Proyecto
+/
+├── src/
+│   ├── components/      # UI reutilizable
+│   ├── pages/           # Login, Projects, Kanban, Dashboard
+│   ├── hooks/           # auth, api, estado global
+│   ├── services/        # HTTP client, OIDC, API wrappers
+│   └── config/          # env, headers, seguridad
+└── public/              # assets
+```
+
+## ⚙️ Pipelines DevSecOps (GitHub Actions)
+
+A continuación se incluyen pipelines recomendados y listos para integrar en el repositorio.
+
+### 🛠️ 1️⃣ Pipeline – Auditoría de dependencias con npm audit
 
 ```
-📚 Guía de uso de las funciones principales
-Sección de Proyectos
-Visualiza todos los proyectos creados.
-Puedes crear un nuevo proyecto, editar o eliminar los existentes.
-Al seleccionar un proyecto, accedes a su tablero Kanban y a los riesgos asociados.
-Sección de Riesgos
-Muestra la lista de riesgos registrados para cada proyecto.
-Permite agregar nuevos riesgos, editar su estado, severidad y comentarios.
-Puedes filtrar riesgos por estado, severidad o fecha.
-Accede al detalle de cada riesgo para ver historial y comentarios.
-Dashboard
-Visualiza métricas generales de seguridad y riesgos.
-Incluye gráficas de severidad, estado y tendencias de riesgos.
-Acceso rápido a alertas y reportes recientes.
-Importación de datos desde JSON
-Puedes importar riesgos o proyectos desde archivos JSON compatibles.
-Ve a la sección correspondiente y selecciona “Importar” o “Importar proyecto/riesgo”.
-Selecciona el archivo JSON y confirma la importación.
-El sistema validará el formato y agregará los datos automáticamente.
+.github/workflows/audit.yml
 
-Ejemplo de estructura JSON para riesgos:
+name: NPM Security Audit
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run npm audit
+        run: npm audit --audit-level=high
+```
+### 🧪 2️⃣ Pipeline – Tests + Build + Deploy automático a Vercel
+```
+.github/workflows/deploy.yml
+
+name: Build and Deploy
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tests
+        run: npm test --if-present
+
+      - name: Build project
+        run: npm run build
+
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v20
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          working-directory: ./
+```
+### 🔍 3️⃣ Pipeline – Análisis de vulnerabilidades con Snyk
+``` 
+.github/workflows/snyk.yml
+
+name: Snyk Security Scan
+
+on:
+  pull_request:
+  push:
+    branches: ["main"]
+
+jobs:
+  snyk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Run Snyk scan
+        uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+```
+
+🧷 4️⃣ Pipeline – Integración con Dependency-Track (Envío automático de SBOM)
+
+Si tu pipeline genera un SBOM con cyclonedx, se puede enviar automáticamente al servidor Dependency-Track:
+```
+.github/workflows/dependency-track.yml
+
+name: SBOM Upload to Dependency-Track
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  sbom:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Generate SBOM
+        run: npx @cyclonedx/bom --output bom.json
+
+      - name: Upload SBOM to Dependency-Track
+        run: |
+          curl -X POST \
+          -H "X-Api-Key: ${{ secrets.DT_API_KEY }}" \
+          -H "Content-Type: application/json" \
+          --data @bom.json \
+          "https://dependencytrack.mi-servidor.com/api/v1/bom"
+``` 
+
+Esto permite visualizar vulnerabilidades del proyecto automáticamente en Dependency-Track.
+
+## 📚 Guía de Uso
+
+### 📌 1. Sección de Proyectos
+
+- Ver listado de proyectos creados.
+
+- Crear, editar o eliminar proyectos.
+
+- Acceder al tablero Kanban y a los riesgos asociados.
+
+### ⚠️ 2. Sección de Riesgos
+
+- Listado de riesgos por proyecto.
+
+- Crear o modificar riesgos (estado, severidad, comentarios).
+
+- Filtro por severidad, estado o fechas.
+
+- Detalles con historial y comentarios.
+
+### 📊 3. Dashboard
+
+- Gráficos de severidad, estado y tendencia de riesgos.
+
+- Vista rápida de alertas.
+
+- Últimos reportes importados.
+
+## 📥 Importación de Datos (JSON)
+
+Puedes importar proyectos o riesgos desde JSON.
+
+Ejemplo de JSON válido para riesgos:
+
 [
   {
     "nombre": "Riesgo de acceso no autorizado",
@@ -79,7 +216,3 @@ Ejemplo de estructura JSON para riesgos:
     "estado": "En progreso"
   }
 ]
-Consejos de navegación
-- Usa la barra lateral para moverte entre Dashboard, Proyectos, Riesgos y Configuración.
-- Haz clic en los botones “Crear” o “Importar” para agregar nuevos elementos.
-- Utiliza los filtros y búsquedas para encontrar información rápidamente.
