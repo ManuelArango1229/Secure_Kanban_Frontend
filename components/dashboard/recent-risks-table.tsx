@@ -22,6 +22,13 @@ const statusLabels = {
   accepted: "Accepted",
 }
 
+const statusColors = {
+  identified: "bg-red-500 text-red-700",      // Identified: rojo
+  in_progress: "bg-blue-500 text-blue-700",  // In Progress: azul
+  mitigated: "bg-green-500 text-green-700",  // Mitigated: verde
+  accepted: "bg-orange-400 text-orange-700", // Accepted: naranja
+}
+
 export function RecentRisksTable({ risks }: RecentRisksTableProps) {
   const recentRisks = risks.slice(0, 5)
 
@@ -58,7 +65,9 @@ export function RecentRisksTable({ risks }: RecentRisksTableProps) {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="secondary">{statusLabels[risk.status]}</Badge>
+                    <Badge variant="secondary" className={statusColors[risk.status]}>
+                      {statusLabels[risk.status]}
+                    </Badge>
                   </TableCell>
                   <TableCell>{risk.cvss_score ? risk.cvss_score.toFixed(1) : "N/A"}</TableCell>
                 </TableRow>

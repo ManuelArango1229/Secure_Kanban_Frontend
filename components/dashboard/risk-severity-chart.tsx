@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
-import { Bar, BarChart, XAxis, YAxis } from "recharts"
+import { Bar, BarChart, XAxis, YAxis, Cell } from "recharts"
 import type { Risk } from "@/lib/types"
 import { TrendingUp } from "lucide-react"
 
@@ -18,11 +18,18 @@ export function RiskSeverityChart({ risks }: RiskSeverityChartProps) {
     low: risks.filter((r) => r.severity === "low").length,
   }
 
+  // Colores igual que RiskStatusChart
+  const severityColors = {
+    Critical: "#ef4444",      // rojo (Identified)
+    High: "#3b82f6",         // azul (In Progress)
+    Medium: "#22c55e",       // verde (Mitigated)
+    Low: "#f59e42",          // naranja (Accepted)
+  }
   const data = [
-    { severity: "Critical", count: severityCounts.critical, fill: "hsl(var(--chart-1))" },
-    { severity: "High", count: severityCounts.high, fill: "hsl(var(--chart-2))" },
-    { severity: "Medium", count: severityCounts.medium, fill: "hsl(var(--chart-3))" },
-    { severity: "Low", count: severityCounts.low, fill: "hsl(var(--chart-4))" },
+    { severity: "Critical", count: severityCounts.critical },
+    { severity: "High", count: severityCounts.high },
+    { severity: "Medium", count: severityCounts.medium },
+    { severity: "Low", count: severityCounts.low },
   ]
 
   return (
@@ -51,7 +58,14 @@ export function RiskSeverityChart({ risks }: RiskSeverityChartProps) {
             <XAxis dataKey="severity" />
             <YAxis />
             <ChartTooltip content={<ChartTooltipContent />} />
-            <Bar dataKey="count" radius={[12, 12, 0, 0]} />
+            <Bar dataKey="count" radius={[12, 12, 0, 0]}>
+              {data.map((entry, idx) => {
+                const key = entry.severity.charAt(0).toUpperCase() + entry.severity.slice(1).toLowerCase();
+                return (
+                  <Cell key={`cell-${idx}`} fill={severityColors[key as keyof typeof severityColors]} />
+                );
+              })}
+            </Bar>
           </BarChart>
         </ChartContainer>
       </CardContent>

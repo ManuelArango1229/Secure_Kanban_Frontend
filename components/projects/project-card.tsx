@@ -40,10 +40,10 @@ export function ProjectCard({ project, onDelete }: ProjectCardProps) {
             variant="destructive"
             size="sm"
             onClick={onDelete}
-            className="gap-2"
+            className="gap-2 cursor-pointer transition active:scale-95 focus:ring-2 focus:ring-red-400 hover:bg-red-600 hover:text-white"
             aria-label="Delete project"
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className="h-4 w-4 transition-transform group-hover:scale-110" />
             Eliminar
           </Button>
         </div>

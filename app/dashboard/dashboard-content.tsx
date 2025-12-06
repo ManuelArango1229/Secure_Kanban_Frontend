@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { AlertTriangle, CheckCircle2, Clock, FolderKanban, TrendingUp, TrendingDown } from "lucide-react"
 import { ProjectCard } from "@/components/projects/project-card"
@@ -14,6 +14,50 @@ import { Badge } from "@/components/ui/badge"
 import type { Project, Risk } from "@/lib/types"
 
 export function DashboardContent() {
+    const [importOpen, setImportOpen] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [importJson, setImportJson] = useState("");
+    const [importPreview, setImportPreview] = useState<any>(null);
+    const [importError, setImportError] = useState<string | null>(null);
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const text = ev.target?.result as string;
+          setImportJson(text);
+          const json = JSON.parse(text);
+          setImportPreview(json);
+          setImportError(null);
+        } catch (err) {
+          setImportError("JSON inválido");
+          setImportPreview(null);
+        }
+      };
+      reader.readAsText(file);
+    };
+
+    const handleImport = async () => {
+      if (!importPreview) return;
+      setImportError(null);
+      try {
+        const res = await fetch("/api/import-project", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(importPreview),
+        });
+        if (!res.ok) throw new Error("Error al importar");
+        setImportOpen(false);
+        setImportJson("");
+        setImportPreview(null);
+        // Opcional: recargar datos
+        window.location.reload();
+      } catch (err) {
+        setImportError("Error al importar el proyecto");
+      }
+    };
   const [projects, setProjects] = useState<Project[]>([])
   const [risks, setRisks] = useState<Risk[]>([])
   const [loading, setLoading] = useState(true)
@@ -103,10 +147,50 @@ export function DashboardContent() {
 
   return (
     <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight glow-text">Dashboard</h1>
-        <p className="text-muted-foreground mt-1">Overview of your security risk management</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground mt-1">Overview of your security risk management</p>
+        </div>
+        <Button
+          variant="default"
+          onClick={() => fileInputRef.current?.click()}
+          className="cursor-pointer transition active:scale-95 focus:ring-2 focus:ring-blue-400"
+        >
+          Importar proyecto
+        </Button>
+        <input
+          type="file"
+          accept="application/json"
+          ref={fileInputRef}
+          style={{ display: "none" }}
+          onChange={handleFileChange}
+        />
       </div>
+
+      {/* Modal de importación */}
+      {importPreview && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-lg space-y-4">
+            <h2 className="text-xl font-bold mb-2">Importar proyecto desde JSON</h2>
+            {importError && <p className="text-red-600 text-sm">{importError}</p>}
+            <pre className="bg-muted/40 p-2 rounded text-xs max-h-40 overflow-auto border">
+              {JSON.stringify(importPreview, null, 2)}
+            </pre>
+            <div className="flex gap-2 justify-end mt-4">
+              <Button variant="outline" onClick={() => { setImportPreview(null); setImportJson(""); }}>Cancelar</Button>
+              <Button
+                variant="default"
+                onClick={handleImport}
+                disabled={!importPreview}
+                className="cursor-pointer transition active:scale-95 focus:ring-2 focus:ring-blue-400"
+              >
+                Importar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className="dark:gradient-card dark:border-primary/20 glow-border transition-all duration-300 hover:scale-[1.02]">

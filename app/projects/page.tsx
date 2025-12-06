@@ -94,7 +94,7 @@ export default function ProjectsPage() {
   const handleDelete = async (id: string) => {
     try {
       const res = await fetch(`/api/projects/${id}`, { method: "DELETE" })
-      if (!res.ok && res.status !== 204) throw new Error("Error deleting project")
+      if (!res.ok) throw new Error("Error deleting project")
       setProjectsState(prev => prev.filter(p => p.id !== id))
     } catch (err) {
       console.error("Delete project error:", err)

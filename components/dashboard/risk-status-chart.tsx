@@ -18,11 +18,17 @@ export function RiskStatusChart({ risks }: RiskStatusChartProps) {
     accepted: risks.filter((r) => r.status === "accepted").length,
   }
 
+  const statusColors = {
+    Identified: "#ef4444", // rojo
+    "In Progress": "#3b82f6", // azul
+    Mitigated: "#22c55e", // verde
+    Accepted: "#f59e42", // naranja
+  }
   const data = [
-    { name: "Identified", value: statusCounts.identified, fill: "hsl(var(--chart-1))" },
-    { name: "In Progress", value: statusCounts.in_progress, fill: "hsl(var(--chart-4))" },
-    { name: "Mitigated", value: statusCounts.mitigated, fill: "hsl(var(--chart-3))" },
-    { name: "Accepted", value: statusCounts.accepted, fill: "hsl(var(--chart-5))" },
+    { name: "Identified", value: statusCounts.identified, fill: statusColors.Identified },
+    { name: "In Progress", value: statusCounts.in_progress, fill: statusColors["In Progress"] },
+    { name: "Mitigated", value: statusCounts.mitigated, fill: statusColors.Mitigated },
+    { name: "Accepted", value: statusCounts.accepted, fill: statusColors.Accepted },
   ]
 
   return (

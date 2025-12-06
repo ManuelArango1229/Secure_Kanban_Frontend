@@ -73,9 +73,13 @@ export default function SettingsPage() {
             Manage your account and integrations
           </p>
         </div>
-        <Button asChild variant="secondary" className="gap-2">
-          <Link href="/dashboard">
-            <ArrowLeft className="h-4 w-4" />
+        <Button
+          asChild
+          variant="default"
+          className="transition active:scale-95 cursor-pointer focus:ring-2 focus:ring-blue-400"
+        >
+          <Link href="/dashboard" className="flex items-center">
+            <ArrowLeft className="h-4 w-4 mr-2" />
             Volver al Dashboard
           </Link>
         </Button>
